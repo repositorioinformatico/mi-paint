@@ -110,6 +110,7 @@
                 <button id="lineBtn">Línea</button>
                 <button id="circleBtn">Círculo</button>
                 <button id="rectangleBtn">Rectángulo</button>
+                <button id="pcBtn">PC</button>
                 <button id="textBtn">Texto</button>
             </div>
         </label>
@@ -139,6 +140,7 @@
         const lineBtn = document.getElementById('lineBtn');
         const circleBtn = document.getElementById('circleBtn');
         const rectangleBtn = document.getElementById('rectangleBtn');
+        const pcBtn = document.getElementById('pcBtn');
         const textBtn = document.getElementById('textBtn');
 
         // Configurar tamaño del canvas al viewport
@@ -171,49 +173,44 @@
         });
 
         // Selección de herramienta
-        pencilBtn.addEventListener('click', () => {
-            currentTool = 'pencil';
-            pencilBtn.classList.add('active');
+        function setActiveTool(tool) {
+            currentTool = tool;
+            pencilBtn.classList.remove('active');
             lineBtn.classList.remove('active');
             circleBtn.classList.remove('active');
             rectangleBtn.classList.remove('active');
+            pcBtn.classList.remove('active');
             textBtn.classList.remove('active');
+        }
+
+        pencilBtn.addEventListener('click', () => {
+            setActiveTool('pencil');
+            pencilBtn.classList.add('active');
         });
 
         lineBtn.addEventListener('click', () => {
-            currentTool = 'line';
+            setActiveTool('line');
             lineBtn.classList.add('active');
-            pencilBtn.classList.remove('active');
-            circleBtn.classList.remove('active');
-            rectangleBtn.classList.remove('active');
-            textBtn.classList.remove('active');
         });
 
         circleBtn.addEventListener('click', () => {
-            currentTool = 'circle';
+            setActiveTool('circle');
             circleBtn.classList.add('active');
-            pencilBtn.classList.remove('active');
-            lineBtn.classList.remove('active');
-            rectangleBtn.classList.remove('active');
-            textBtn.classList.remove('active');
         });
 
         rectangleBtn.addEventListener('click', () => {
-            currentTool = 'rectangle';
+            setActiveTool('rectangle');
             rectangleBtn.classList.add('active');
-            pencilBtn.classList.remove('active');
-            lineBtn.classList.remove('active');
-            circleBtn.classList.remove('active');
-            textBtn.classList.remove('active');
+        });
+
+        pcBtn.addEventListener('click', () => {
+            setActiveTool('pc');
+            pcBtn.classList.add('active');
         });
 
         textBtn.addEventListener('click', () => {
-            currentTool = 'text';
+            setActiveTool('text');
             textBtn.classList.add('active');
-            pencilBtn.classList.remove('active');
-            lineBtn.classList.remove('active');
-            circleBtn.classList.remove('active');
-            rectangleBtn.classList.remove('active');
         });
 
         // Funciones de dibujo
@@ -279,6 +276,18 @@
                 ctx.putImageData(snapshot, 0, 0);
                 ctx.beginPath();
                 ctx.rect(startX, startY, x - startX, y - startY);
+                ctx.stroke();
+            } else if (currentTool === 'pc') {
+                ctx.putImageData(snapshot, 0, 0);
+                const width = x - startX;
+                const height = y - startY;
+                ctx.beginPath();
+                // Monitor (rectángulo superior)
+                ctx.rect(startX, startY, width, height * 0.6);
+                // Base (rectángulo inferior)
+                ctx.rect(startX + width * 0.3, startY + height * 0.6, width * 0.4, height * 0.1);
+                // Pie
+                ctx.rect(startX + width * 0.2, startY + height * 0.7, width * 0.6, height * 0.05);
                 ctx.stroke();
             }
         }
