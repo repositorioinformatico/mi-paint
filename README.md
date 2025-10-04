@@ -2,6 +2,8 @@
 
 Aplicación web de dibujo simple y minimalista.
 
+🎨 **[Pruébala aquí](https://repositorioinformatico.github.io/mi-paint/)**
+
 ## Características
 
 - **Lápiz**: Dibuja a mano alzada
