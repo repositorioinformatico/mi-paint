@@ -13,45 +13,67 @@
 
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            color: #333;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
         }
 
         .toolbar {
-            margin-bottom: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
             display: flex;
+            flex-direction: column;
             gap: 15px;
-            align-items: center;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            z-index: 10;
         }
 
         .toolbar label {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 8px;
             font-weight: bold;
+            font-size: 14px;
         }
 
         #colorPicker {
-            width: 50px;
+            width: 60px;
             height: 40px;
             border: none;
             cursor: pointer;
         }
 
         #brushSize {
-            width: 150px;
+            width: 120px;
+        }
+
+        .tool-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tool-buttons button {
+            padding: 10px;
+            background-color: #e0e0e0;
+            color: #333;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .tool-buttons button:hover {
+            background-color: #d0d0d0;
+        }
+
+        .tool-buttons button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
         }
 
         button {
@@ -69,17 +91,29 @@
         }
 
         #canvas {
-            border: 2px solid #333;
+            position: absolute;
+            top: 0;
+            left: 0;
             background-color: white;
             cursor: crosshair;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
-    <h1>Mi Paint</h1>
+    <canvas id="canvas"></canvas>
 
     <div class="toolbar">
+        <label>
+            Herramienta:
+            <div class="tool-buttons">
+                <button id="pencilBtn" class="active">Lápiz</button>
+                <button id="lineBtn">Línea</button>
+                <button id="circleBtn">Círculo</button>
+                <button id="rectangleBtn">Rectángulo</button>
+                <button id="textBtn">Texto</button>
+            </div>
+        </label>
+
         <label>
             Color:
             <input type="color" id="colorPicker" value="#000000">
@@ -94,8 +128,6 @@
         <button id="clearBtn">Limpiar</button>
     </div>
 
-    <canvas id="canvas" width="800" height="600"></canvas>
-
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -103,10 +135,26 @@
         const brushSize = document.getElementById('brushSize');
         const sizeValue = document.getElementById('sizeValue');
         const clearBtn = document.getElementById('clearBtn');
+        const pencilBtn = document.getElementById('pencilBtn');
+        const lineBtn = document.getElementById('lineBtn');
+        const circleBtn = document.getElementById('circleBtn');
+        const rectangleBtn = document.getElementById('rectangleBtn');
+        const textBtn = document.getElementById('textBtn');
+
+        // Configurar tamaño del canvas al viewport
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
         let isDrawing = false;
         let currentColor = '#000000';
         let currentSize = 5;
+        let currentTool = 'pencil';
+        let startX, startY;
+        let snapshot;
 
         // Actualizar valores
         colorPicker.addEventListener('change', (e) => {
@@ -122,10 +170,76 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
+        // Selección de herramienta
+        pencilBtn.addEventListener('click', () => {
+            currentTool = 'pencil';
+            pencilBtn.classList.add('active');
+            lineBtn.classList.remove('active');
+            circleBtn.classList.remove('active');
+            rectangleBtn.classList.remove('active');
+            textBtn.classList.remove('active');
+        });
+
+        lineBtn.addEventListener('click', () => {
+            currentTool = 'line';
+            lineBtn.classList.add('active');
+            pencilBtn.classList.remove('active');
+            circleBtn.classList.remove('active');
+            rectangleBtn.classList.remove('active');
+            textBtn.classList.remove('active');
+        });
+
+        circleBtn.addEventListener('click', () => {
+            currentTool = 'circle';
+            circleBtn.classList.add('active');
+            pencilBtn.classList.remove('active');
+            lineBtn.classList.remove('active');
+            rectangleBtn.classList.remove('active');
+            textBtn.classList.remove('active');
+        });
+
+        rectangleBtn.addEventListener('click', () => {
+            currentTool = 'rectangle';
+            rectangleBtn.classList.add('active');
+            pencilBtn.classList.remove('active');
+            lineBtn.classList.remove('active');
+            circleBtn.classList.remove('active');
+            textBtn.classList.remove('active');
+        });
+
+        textBtn.addEventListener('click', () => {
+            currentTool = 'text';
+            textBtn.classList.add('active');
+            pencilBtn.classList.remove('active');
+            lineBtn.classList.remove('active');
+            circleBtn.classList.remove('active');
+            rectangleBtn.classList.remove('active');
+        });
+
         // Funciones de dibujo
         function startDrawing(e) {
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+
+            if (currentTool === 'text') {
+                const text = prompt('Escribe el texto:');
+                if (text) {
+                    ctx.font = `${currentSize * 4}px Arial`;
+                    ctx.fillStyle = currentColor;
+                    ctx.fillText(text, startX, startY);
+                }
+                return;
+            }
+
             isDrawing = true;
-            draw(e);
+
+            if (currentTool === 'pencil') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+            } else {
+                snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
         }
 
         function stopDrawing() {
@@ -144,10 +258,29 @@
             ctx.lineCap = 'round';
             ctx.strokeStyle = currentColor;
 
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
+            if (currentTool === 'pencil') {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else if (currentTool === 'line') {
+                ctx.putImageData(snapshot, 0, 0);
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            } else if (currentTool === 'circle') {
+                ctx.putImageData(snapshot, 0, 0);
+                ctx.beginPath();
+                const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+                ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (currentTool === 'rectangle') {
+                ctx.putImageData(snapshot, 0, 0);
+                ctx.beginPath();
+                ctx.rect(startX, startY, x - startX, y - startY);
+                ctx.stroke();
+            }
         }
 
         // Event listeners
